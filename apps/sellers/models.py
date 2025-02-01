@@ -27,5 +27,3 @@ class Seller(BaseModel):
 
     def __str__(self):
         return f"Seller for {self.business_name}"
-
-
