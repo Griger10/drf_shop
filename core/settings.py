@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.black_list',
+    'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'apps.accounts',
     'apps.shop',
