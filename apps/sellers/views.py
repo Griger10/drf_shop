@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.utils import set_dict_attr
 from apps.sellers.models import Seller
 from apps.sellers.serializers import SellerSerializer
 from apps.shop.models import Product, Category
@@ -100,18 +101,26 @@ class SellerProductView(APIView):
         if not product:
             return Response(data={"message": "Product by this slug doesnt exist!"}, status=404)
 
-        if product.seller.user.first_name != request.user.first_name:
+        elif product.seller != request.user.seller:
             return Response(data={"message": "You are not an owner of a product"}, status=403)
 
-        if product.price_current != kwargs['price_current']:
-            temp = product.price_current
-            product.price_current = kwargs['price_current']
-            product.price_old = temp
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            category_slug = data.pop("category_slug", None)
+            category = Category.objects.get_or_none(slug=category_slug)
+            if not category:
+                return Response(data={"message": "Category does not exist!"}, status=404)
+            data['category'] = category
+            if data["price_current"] != product.price_current:
+                data["price_old"] = product.price_current
+            product = set_dict_attr(product, data)
+            product.save()
+            serializer = ProductSerializer(product)
+            return Response(data=serializer.data, status=200)
 
-        product.save()
-
-        serializer = self.serializer_class(product)
-        return Response(serializer.data, status=200)
+        else:
+            return Response(data=serializer.errors, status=400)
 
     @extend_schema(
         summary="Delete a product",
@@ -128,7 +137,7 @@ class SellerProductView(APIView):
         if not product:
             return Response(data={"message": "Product by this slug does not exist!"}, status=404)
 
-        if product.seller.user.first_name != request.user.first_name:
+        elif product.seller != request.user.seller:
             return Response(data={"message": "You are not an owner of a product"}, status=403)
 
         product.delete()
