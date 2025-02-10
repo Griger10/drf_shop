@@ -15,5 +15,5 @@ def generate_unique_code(model: BaseModel, field: str) -> str:
 
 def set_dict_attr(obj, data):
     for attr, value in data.items():
-        obj.attr = value
+        setattr(obj, attr, value)
     return obj
